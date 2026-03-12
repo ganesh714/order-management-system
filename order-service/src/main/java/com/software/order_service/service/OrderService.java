@@ -13,7 +13,7 @@ public class OrderService {
     OrderRepository orderRepository;
 
     public Order createOrder(Order order) {
-        order.setState(OrderState.ORDER_CREATED);
+        order.setStatus(OrderState.ORDER_CREATED);
         Order savedOrder = orderRepository.save(order);
         // TODO : State macine
         return savedOrder;
@@ -25,7 +25,7 @@ public class OrderService {
 
     public void updateOrderState(String id, OrderState state) {
         Order order = getOrderByID(id);
-        order.setState(state);
+        order.setStatus(state);
         orderRepository.save(order);
     }
 }

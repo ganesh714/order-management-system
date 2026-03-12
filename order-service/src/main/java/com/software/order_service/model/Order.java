@@ -16,12 +16,12 @@ public class Order {
     @Id
     private String orderId;
     private Long customerId;
-    private String productId;
+    private Long productId;
     private Integer quantity;
     private BigDecimal unitPrice;
 
     @Enumerated(EnumType.STRING)
-    private OrderState state;
+    private OrderState status;
 
     public Order() {
         this.orderId = UUID.randomUUID().toString(); // random string
@@ -43,11 +43,11 @@ public class Order {
         this.customerId = customerId;
     }
 
-    public String getProductId() {
+    public Long getProductId() {
         return productId;
     }
 
-    public void setProductId(String productId) {
+    public void setProductId(Long productId) {
         this.productId = productId;
     }
 
@@ -67,12 +67,12 @@ public class Order {
         this.unitPrice = unitPrice;
     }
 
-    public OrderState getState() {
-        return state;
+    public OrderState getStatus() {
+        return status;
     }
 
-    public void setState(OrderState state) {
-        this.state = state;
+    public void setStatus(OrderState status) {
+        this.status = status;
     }
 
 }

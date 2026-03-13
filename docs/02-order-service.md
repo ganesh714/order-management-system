@@ -33,8 +33,41 @@ It allows you to fully configure the HTTP response sent back to the client, incl
 2. **The Status Code**: The HTTP status indicating success or failure. For example, returning `HttpStatus.ACCEPTED` (202) explicitly tells the client "We've accepted your request and started processing it, but it's not fully complete yet." (Useful for asynchronous Sagas!). Or `ResponseEntity.ok()` for a standard 200 OK.
 3. **Headers**: You can attach custom HTTP headers if needed.
 
-## Interactions with Spring State Machine
-The `OrderService` interacts with the Spring State Machine to progress the states. Instead of updating states directly, it triggers events that the State Machine listens to. 
+## Deep Dive: Spring State Machine Implementation
 
-## StateMachineInterceptor
-A `StateMachineInterceptor` is used to watch the state machine. Its primary job is to observe state transitions and intercept the changes to update the order state in the PostgreSQL database reliably, ensuring the state machine and the database stay strictly synchronized.
+The Order Service acts as the Saga Orchestrator through the **Spring State Machine**. This involves three key parts: the configuration, the interceptor, and the service integration.
+
+### 1. The Configuration (`StateMachineConfig.java`)
+This class defines the "rules" of our Saga: the possible states and what events cause transitions between them.
+
+**Key Annotations & Classes:**
+- `@Configuration`: Tells Spring this is a configuration class to load on startup.
+- `@EnableStateMachineFactory`: This is crucial. Instead of building a single global state machine, this tells Spring to generate a *factory*. This is required because every single order in our system needs its *own* separate instance of a state machine to track its unique progress.
+- `EnumStateMachineConfigurerAdapter`: A Spring helper class we extend to easily configure our machine using our Enums (`OrderState` and `OrderEvent`).
+
+**Key Code Blocks:**
+- `configure(StateMachineStateConfigurer)`: Defines the starting pipeline by declaring the initial state (`ORDER_CREATED`), explicitly listing all possible states, and defining the terminal end states (`ORDER_COMPLETED`, `ORDER_FAILED`).
+- `configure(StateMachineTransitionConfigurer)`: Maps the exact flows (the Happy Path and Failure Paths). For example, it defines that if the order is currently in the `PAYMENT_PENDING` state and the `PAYMENT_SUCCESS` event is triggered, the machine must transition the order to `PAYMENT_COMPLETED`.
+
+### 2. The Database Interceptor (`OrderStateChangeInterceptor.java`)
+State machines run in memory, meaning if the server crashes, their current state is lost. To fix this, we need to save the state to PostgreSQL immediately every time a transition occurs.
+
+**Key Annotations & Classes:**
+- `@Component`: Registers this class as a Spring Bean so it can be injected wherever needed.
+- `StateMachineInterceptorAdapter`: We extend this adapter to tap into the internal lifecycle hooks of the state machine.
+
+**Key Code Block:**
+- `preStateChange(...)`: We override this specific method because it fires *just before* a state transition is officially completed. Inside this method, we extract the `orderId` from the message headers, retrieve the physical `Order` from the database, update its status to the newly targeted state, and save it. This completely guarantees the database is always 100% in sync with the state machine.
+
+### 3. The Orchestrator Service (`OrderService.java`)
+This class fuses the State Machine with the database repository to trigger real actions.
+
+**Key Code Blocks:**
+- `sendEvent(String orderId, OrderEvent event)`: This orchestrates changes. Instead of haphazardly calling `order.setStatus()`, we send an event (like `CREATE_ORDER`) directly into the machine. We package this event using `MessageBuilder` so we can attach the `orderId` as an HTTP-like header. This is the exact header our `OrderStateChangeInterceptor` (above) utilizes to find the order in the database!
+- `build(String orderId)`: This method is the secret to persistent sagas. Because transactions like `PAYMENT` or `INVENTORY` take time (and might span multiple server requests or even server restarts), we must "rehydrate" the state machine. When an order wakes up to process an event, `build()` does the following:
+  1. Retrieves the `Order` state from PostgreSQL.
+  2. Asks the factory for a state machine instance.
+  3. **Stops** the machine and forcibly **resets** its internal state pointer to match the database (`order.getStatus()`).
+  4. Attaches our `OrderStateChangeInterceptor` to listen for new changes.
+  5. **Starts** the machine again.
+  This allows the system to seamlessly pause, wake up, and resume orchestrating long-running Saga transactions.

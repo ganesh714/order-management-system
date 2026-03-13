@@ -1,4 +1,4 @@
-package com.software.order_service.action;
+package com.software.order_service.service.action;
 
 import com.software.order_service.model.OrderEvent;
 import com.software.order_service.model.OrderState;

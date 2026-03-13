@@ -35,7 +35,7 @@ public class OrderService {
     }
 
     public Order getOrderByID(String id) {
-        return orderRepository.getReferenceById(id);
+        return orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
     private void sendEvent(String orderId, OrderEvent event) {

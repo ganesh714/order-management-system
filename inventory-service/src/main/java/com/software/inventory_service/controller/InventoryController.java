@@ -4,16 +4,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/inventory")
 public class InventoryController {
 	
 	@Value("${fail.on.order.id}")
 	private String failOnOrderId;
 	
-	@PostMapping("/inventory")
+	@PostMapping
 	public ResponseEntity<String> reserveInventory(@RequestParam String orderId){
 		System.out.println("Received inventory reservation request for Order: " + orderId);
 		
@@ -23,7 +25,7 @@ public class InventoryController {
 					.body("Inventory reservation failed: Out of stock.");
 		}
 		System.out.println("Inventory reserved successfully for Order: " + orderId);
-		return ResponseEntity.ok("Inventory reserved.");
+		return ResponseEntity.ok("Inventory reserved.x");
 		
 	}
 }

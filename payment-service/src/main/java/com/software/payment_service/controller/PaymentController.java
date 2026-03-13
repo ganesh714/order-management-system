@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class PaymentController {
 
-    @Value("${FAIL_PAYMENT_ORDER_ID:201}")
+    @Value("${fail.on.order.id}")
     private String failOnOrderId;
 
     @PostMapping("/payments")

@@ -26,7 +26,7 @@ The system uses an orchestrator-based approach where the **Order Service** manag
 
 ```mermaid
 graph TD
-    User((User)) -->|POST /api/orders| OrderService[Order Service<br/>(Orchestrator)]
+    User((User)) -->|POST /api/orders| OrderService["Order Service<br/>(Orchestrator)"]
     OrderService -->|Persist State| DB[(PostgreSQL)]
     
     subgraph "Saga Orchestration"

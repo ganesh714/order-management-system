@@ -38,7 +38,7 @@ public class OrderService {
         return orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
-    private void sendEvent(String orderId, OrderEvent event) {
+    public void sendEvent(String orderId, OrderEvent event) {
         StateMachine<OrderState, OrderEvent> sm = build(orderId);
 
         Message<OrderEvent> msg = MessageBuilder.withPayload(event)

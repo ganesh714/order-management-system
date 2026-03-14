@@ -41,7 +41,11 @@ public class OrderStateChangeInterceptor extends StateMachineInterceptorAdapter<
                     orderRepository.save(order);
 
                     // Log it for observability (Requirement 11)
-                    System.out.println("Saga for order " + orderId + " transitioning to " + state.getId());
+                    System.out.println(String.format("Saga for order %s transitioning from %s to %s on event %s.", 
+                        orderId, 
+                        transition.getSource().getId(), 
+                        state.getId(), 
+                        transition.getTrigger().getEvent()));
                 });
     }
 }

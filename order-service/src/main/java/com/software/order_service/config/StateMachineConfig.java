@@ -10,6 +10,9 @@ import org.springframework.statemachine.config.EnumStateMachineConfigurerAdapter
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
 
+import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
+import org.springframework.statemachine.persist.StateMachineRuntimePersister;
+
 import com.software.order_service.model.OrderEvent;
 import com.software.order_service.model.OrderState;
 
@@ -23,6 +26,16 @@ public class StateMachineConfig extends EnumStateMachineConfigurerAdapter<OrderS
     private Action<OrderState, OrderEvent> reserveInventoryAction;
     @Autowired
     private Action<OrderState, OrderEvent> compensatePaymentAction;
+
+    @Autowired
+    private StateMachineRuntimePersister<OrderState, OrderEvent, String> stateMachineRuntimePersister;
+
+    @Override
+    public void configure(StateMachineConfigurationConfigurer<OrderState, OrderEvent> config) throws Exception {
+        config
+            .withPersistence()
+            .runtimePersister(stateMachineRuntimePersister);
+    }
 
     @Override
     public void configure(StateMachineStateConfigurer<OrderState, OrderEvent> states) throws Exception {

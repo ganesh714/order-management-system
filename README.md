@@ -35,26 +35,34 @@ This will:
 3.  Wait for the database to be healthy, then compile and start the `order-service` Orchestrator.
 
 ### 4. Testing the Saga Pattern
-You can test the Orchestrator's behavior by sending HTTP POST requests to the `order-service` at `http://localhost:8080/orders`. 
+You can test the Orchestrator's behavior by sending HTTP POST requests to the `order-service` at `http://localhost:8080/api/orders`. 
 
 We have provided a `submission.json` file in the root directory detailing the test scenarios.
 
 #### Scenario A: The Happy Path (Complete Success)
 Use an ID that will **not** trigger the simulated failures (e.g., `"100"` or any random UUID).
-```json
-{
-    "customerId": 1,
-    "productId": 1,
-    "quantity": 2,
-    "unitPrice": 50.00
-}
+```bash
+# Example using curl
+curl -X POST http://localhost:8080/api/orders/custom/100 \
+-H "Content-Type: application/json" \
+-d '{"customerId": 1, "productId": 1, "quantity": 2, "unitPrice": 50.0}'
 ```
-*Result*: Order is created -> Payment is processed -> Inventory is reserved -> State becomes `ORDER_COMPLETED`.
+*Result*: State becomes `ORDER_COMPLETED`.
 
 #### Scenario B: Payment Failure
-To test payment rejection, pass the ID defined in `submission.json` as `failingPaymentOrderId` (`201`) as your generic identifier. Because our controller takes generating ID internally, to test this specific failure with our current REST API, you'll need to update the Order Entity to accept a manual ID for testing, or trace the generated ID in the logs.
-*Result*: Order is created -> Payment Fails -> State becomes `ORDER_FAILED`.
+To test payment rejection, use the custom endpoint with the ID `201`:
+```bash
+curl -X POST http://localhost:8080/api/orders/custom/201 \
+-H "Content-Type: application/json" \
+-d '{"customerId": 1, "productId": 1, "quantity": 2, "unitPrice": 50.0}'
+```
+*Result*: State becomes `ORDER_FAILED`.
 
 #### Scenario C: Inventory Failure (The Compensating Transaction!)
-Wait for the Payment to succeed, but trigger a failure in the Inventory Service.
-*Result*: Order is created -> Payment Succeeds -> Inventory Fails -> **PaymentService is called to Refund the money** -> State becomes `ORDER_FAILED`.
+Use the custom endpoint with the ID `302`:
+```bash
+curl -X POST http://localhost:8080/api/orders/custom/302 \
+-H "Content-Type: application/json" \
+-d '{"customerId": 1, "productId": 1, "quantity": 2, "unitPrice": 50.0}'
+```
+*Result*: State becomes `ORDER_FAILED` and payment is refunded.

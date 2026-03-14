@@ -8,6 +8,11 @@ Please check the `docs/` folder for in-depth details on the architecture and how
 2. [Order Service (The Orchestrator)](docs/02-order-service.md)
 3. [Payment Service (The Worker)](docs/03-payment-service.md)
 4. [Inventory Service (The Worker)](docs/04-inventory-service.md)
+5. [Common Annotations, Classes & Functions](docs/06-code-walkthrough.md) (Highly Recommended for code review!)
+6. [High-Level Architecture Overview](docs/07-high-level-architecture.md)
+7. [Low-Level Architecture Deep Dive](docs/08-low-level-architecture.md)
+
+
 
 ## How to Run
 This project is fully containerized using Docker and Docker Compose. This ensures you do not need to install PostgreSQL or configure Java environments manually.

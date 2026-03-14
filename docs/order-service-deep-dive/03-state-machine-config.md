@@ -3,8 +3,8 @@
 This is the brain of the Saga pattern. It strictly maps out the states an order can exist in and the rules for moving between them.
 
 ## Key Spring State Machine Classes
-* **`@EnableStateMachineFactory`**: We do NOT want one global state machine for the whole app. We use a *Factory* because every single order needs its own unique, isolated State Machine instance to track its specific progress.
-* **`EnumStateMachineConfigurerAdapter`**: A Spring helper class that allows us to configure the states and transitions using our `OrderState` and `OrderEvent` enums.
+* **`@EnableStateMachineFactory`**: In a high-traffic system, we cannot use a single global state machine. This annotation allows Spring to create a **Factory** that can generate unique, isolated `StateMachine` instances for every single `orderId`. This ensures data isolation and thread safety across concurrent orders.
+* **`EnumStateMachineConfigurerAdapter`**: A Spring helper class that allowing us to configure the states and transitions using our `OrderState` and `OrderEvent` enums.
 
 ## Deep Dive: The Database Interceptor
 ```java
@@ -12,8 +12,7 @@ This is the brain of the Saga pattern. It strictly maps out the states an order 
 public class OrderStateChangeInterceptor extends StateMachineInterceptorAdapter<OrderState, OrderEvent>
 ```
 
-State machines run entirely in the server's RAM. If the server restarts, the machine forgets where it was.
-To fix this, we created an Interceptor.
+State machines run entirely in the server's RAM. If the server restarts, the machine forgets where it was. To fix this, we created an Interceptor.
 
 * We override the `preStateChange` method.
 * This acts as a hook that fires *just before* a state officially transitions.
@@ -35,8 +34,20 @@ We wire these Actions directly into our transition rules in `StateMachineConfig.
 .action(processPaymentAction) // <--- The Action is fired right here!
 ```
 
-## Integrating RestTemplate
-To allow our Actions to actually talk to the other microservices (Payment and Inventory), we configured a `RestTemplate` (a synchronous HTTP client provided by Spring).
-* **`RestTemplateConfig`**: Creates the `RestTemplate` Bean.
-* **Injection**: We inject `RestTemplate` into our Action classes, along with the external service URLs we defined in `application.properties` using `@Value("${payment.service.url}")`.
-* **Execution**: During the Action's `execute()` method, we make an HTTP POST or DELETE call and inspect the response. Depending on whether the response is a success (200 OK) or failure (500 Error), we shoot a new `OrderEvent` (like `PAYMENT_SUCCESS` or `PAYMENT_FAILED`) back into the State Machine to push the Saga forward or trigger a rollback.
+## Integrating RestTemplate & Reliability
+To allow our Actions to talk to other microservices, we use `RestTemplate`.
+
+* **Injection**: We inject `RestTemplate` into our Action classes.
+* **Reliability (The 200ms Delay)**: In high-concurrency environments, state transitions can sometimes happen faster than the database can unlock the `Order` record. To prevent race conditions, our Actions use:
+  ```java
+  Mono.delay(Duration.ofMillis(200)).subscribe(t -> { ... })
+  ```
+  This small delay ensures the `OrderStateChangeInterceptor` has finished saving the new state to the database before the next event (e.g., `PAYMENT_SUCCESS`) is fired back into the machine. 
+
+### Decoupling circular dependencies
+Previously, `ProcessPaymentAction` relied on `OrderService` to fire events. This created a **Circular Dependency**. We resolved this by firing events directly into the `StateMachine` available in the `StateContext`:
+```java
+context.getStateMachine().sendEvent(Mono.just(msg)).subscribe();
+```
+This is cleaner, more reactive, and adheres to the orchestrator pattern where the machine drives its own transitions.
+

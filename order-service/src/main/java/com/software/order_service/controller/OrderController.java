@@ -22,6 +22,30 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    // Used specifically for testing Saga Failure flow
+    @PostMapping("/orders/custom/{orderId}")
+    public ResponseEntity<OrderResponse> placeCustomOrder(
+            @PathVariable String orderId,
+            @RequestBody OrderRequest orderRequest) {
+
+        Order newOrder = new Order();
+        // Override the auto-generated UUID with our custom ID (e.g., "201" or "302")
+        newOrder.setOrderId(orderId);
+        newOrder.setCustomerId(orderRequest.getCustomerId());
+        newOrder.setProductId(orderRequest.getProductId());
+        newOrder.setQuantity(orderRequest.getQuantity());
+        newOrder.setUnitPrice(orderRequest.getUnitPrice());
+
+        Order savedOrder = orderService.createOrder(newOrder);
+
+        OrderResponse response = new OrderResponse();
+        response.setOrderId(savedOrder.getOrderId());
+        response.setStatus(savedOrder.getStatus().name());
+        response.setMessage("Custom Order creation process initiated for testing.");
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
     @PostMapping("/orders")
     public ResponseEntity<OrderResponse> placeOrder(@RequestBody OrderRequest orderRequest) {
         Order newOrder = new Order();

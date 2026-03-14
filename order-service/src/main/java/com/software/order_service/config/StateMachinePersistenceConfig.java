@@ -13,8 +13,9 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @Configuration
-@EnableJpaRepositories(basePackages = {"com.software.order_service.repository", "org.springframework.statemachine.data.jpa"})
-@EntityScan(basePackages = {"com.software.order_service.model", "org.springframework.statemachine.data.jpa.domain"})
+@EnableJpaRepositories(basePackages = { "com.software.order_service.repository",
+        "org.springframework.statemachine.data.jpa" })
+@EntityScan(basePackages = { "com.software.order_service.model", "org.springframework.statemachine.data.jpa" })
 public class StateMachinePersistenceConfig {
 
     @Bean

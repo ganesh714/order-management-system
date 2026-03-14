@@ -27,7 +27,7 @@ public class CompensatePaymentAction implements Action<OrderState, OrderEvent> {
 
         try {
             // Using DELETE method to represent a cancellation/refund
-            restTemplate.delete(paymentServiceUrl + "/api/payments?orderId=" + orderId);
+            restTemplate.delete(paymentServiceUrl + "/api/payments/" + orderId + "/cancel");
             System.out.println("Refund processed successfully.");
         } catch (Exception e) {
             System.err.println("CRITICAL: Failed to refund payment for Order: " + orderId);

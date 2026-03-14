@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,8 +32,8 @@ public class PaymentController {
         return ResponseEntity.ok("Payment successful.");
     }
     
-    @DeleteMapping("payments")
-    public ResponseEntity<String> refundPayment(@RequestParam String orderId){
+    @DeleteMapping("/{orderId}/cancel")
+    public ResponseEntity<String> refundPayment(@PathVariable String orderId){
     	System.out.println("COMPENSATION: Received refund request for Order: " + orderId);
     	return ResponseEntity.ok("Payment refunded successfully.");
     }

@@ -23,7 +23,7 @@ public class OrderController {
     private OrderService orderService;
 
     // Used specifically for testing Saga Failure flow
-    @PostMapping("/orders/custom/{orderId}")
+    @PostMapping("/api/orders/custom/{orderId}")
     public ResponseEntity<OrderResponse> placeCustomOrder(
             @PathVariable String orderId,
             @RequestBody OrderRequest orderRequest) {
@@ -46,7 +46,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
-    @PostMapping("/orders")
+    @PostMapping("/api/orders")
     public ResponseEntity<OrderResponse> placeOrder(@RequestBody OrderRequest orderRequest) {
         Order newOrder = new Order();
         newOrder.setCustomerId(orderRequest.getCustomerId());
@@ -65,7 +65,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
-    @GetMapping("/orders/{id}")
+    @GetMapping("/api/orders/{id}")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable String id) {
         Order order = orderService.getOrderByID(id);
 
